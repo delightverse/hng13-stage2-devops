@@ -209,7 +209,7 @@ done | grep -v 200 | wc -l
 - Alerting on failover events
 
 ## Compliance with Requirements
-
+```bash
 ✅ Docker Compose orchestration
 ✅ NGINX upstream configuration
 ✅ Blue/Green exposed on 8081/8082
@@ -223,7 +223,7 @@ done | grep -v 200 | wc -l
 
 ❌ Not using: Kubernetes, Swarm, service mesh
 ❌ Not building: Using pre-built images only
-
+```
 ## Lessons Learned
 
 1. **Simplicity Wins:** Simple solutions are more reliable
