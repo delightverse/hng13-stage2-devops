@@ -87,7 +87,6 @@ sleep 2
 # Trigger chaos on Blue
 curl -X POST "http://13.217.227.104:8081/chaos/start?mode=error"
 
-
 # Test via NGINX (should route to Green)
 curl -i http://13.217.227.104:8080/version | grep 'X-App-Pool'
 # Wait 2 seconds
