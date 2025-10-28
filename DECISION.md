@@ -155,7 +155,7 @@ proxy_pass_header X-Release-Id;
 ```bash
 # 100 requests during chaos
 for i in {1..100}; do
-  curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/version
+  curl -s -o /dev/null -w "%{http_code}\n" http://13.217.227.104:8080/version
 done | grep -v 200 | wc -l
 # Should output: 0 (zero non-200 responses)
 ```

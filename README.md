@@ -1,8 +1,9 @@
 # HNG Stage 2 - Blue/Green Deployment with NGINX
 
 ## Author
-- **Name:** [Your Full Name]
-- **Slack:** @your-slack-username
+- **Name:** Ubah Delight Okechukwu
+- **Slack:** @DelightU
+- **Instance IP:** 13.217.227.104
 
 ## Overview
 
@@ -33,7 +34,7 @@ Client → NGINX (Port 8080) → Blue (8081) [Primary]
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/YOUR-USERNAME/hng-stage2-blue-green.git
+git clone https://github.com/delightverse/hng13-stage2-devops.git
 cd hng-stage2-blue-green
 ```
 
@@ -54,47 +55,68 @@ docker-compose up -d
 docker-compose ps
 
 # Test through NGINX
-curl http://localhost:8080/version
+curl -i http://13.217.227.104:8080/version
 ```
 
-## Testing Failover
+## Deployment Information
 
-### Trigger Failure on Blue
+This application is deployed on AWS EC2 and publicly accessible via:
+
+- **NGINX Public Endpoint:** http://13.217.227.104:8080
+- **Blue Container (Direct):** http://13.217.227.104:8081
+- **Green Container (Direct):** http://13.217.227.104:8082
+
+## Server Details
+
+- **Platform:** AWS EC2
+- **Instance Type:** t3.micro
+- **OS:** Ubuntu 22.04 LTS
+- **Region:** [us-east-1]
+- **Docker Version:** [Docker version 28.5.1, build e180ab8]
+- **Docker Compose Version:** [Docker Compose version v2.40.2]
+
+## Trigger Tests
+
+### Testing Failover
 ```bash
-# Induce error mode
-curl -X POST "http://localhost:8081/chaos/start?mode=error"
-
+# Test to see if nginx is serving from blue
+curl -v http://13.217.227.104:8080/version
 # Wait 2 seconds
 sleep 2
 
-# Test - should now route to Green
-curl http://localhost:8080/version
-# Should show: X-App-Pool: green
+# Trigger chaos on Blue
+curl -X POST "http://13.217.227.104:8081/chaos/start?mode=error"
+
+
+# Test via NGINX (should route to Green)
+curl -i http://13.217.227.104:8080/version | grep 'X-App-Pool'
+# Wait 2 seconds
+sleep 2
+
+# Stop chaos
+curl -X POST "http://13.217.227.104:8081/chaos/stop"
+
+# Test to see if nginx is serving from blue
+curl -v http://13.217.227.104:8081/version
 ```
 
 ### Verify No Client Errors
 ```bash
 # Run multiple requests
 for i in {1..20}; do
-  curl -s -o /dev/null -w "Request $i: %{http_code}\n" http://localhost:8080/version
+  curl -s -o /dev/null -w "Request $i: %{http_code}\n" http://13.217.227.104:8080/version
+  curl -i http://13.217.227.104:8080/version | grep "X-App-Pool:"
 done
 
 # All should show 200
 ```
 
-### Stop Chaos
-```bash
-curl -X POST "http://localhost:8081/chaos/stop"
-```
-
-## Configuration
-
 ### Environment Variables (.env)
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `BLUE_IMAGE` | Blue container image | `ghcr.io/hngprojects/hng_stage_two_task:main` |
-| `GREEN_IMAGE` | Green container image | `ghcr.io/hngprojects/hng_stage_two_task:main` |
+| `BLUE_IMAGE` | Blue container image | `https://hub.docker.com/r/yimikaade/wonderful:devops-stage-two` |
+| `GREEN_IMAGE` | Green container image | `https://hub.docker.com/r/yimikaade/wonderful:devops-stage-two` |
 | `ACTIVE_POOL` | Primary pool (blue/green) | `blue` |
 | `RELEASE_ID_BLUE` | Blue release identifier | `blue-release-1.0.0` |
 | `RELEASE_ID_GREEN` | Green release identifier | `green-release-1.0.0` |
@@ -112,7 +134,7 @@ curl -X POST "http://localhost:8081/chaos/stop"
 
 ### Normal Operation
 
-1. Client sends request to `localhost:8080`
+1. Client sends request to `http://13.217.227.104:8080`
 2. NGINX forwards to Blue (primary)
 3. Blue responds with headers: `X-App-Pool: blue`
 4. Client receives 200 OK
@@ -122,7 +144,9 @@ curl -X POST "http://localhost:8081/chaos/stop"
 1. Blue fails (chaos triggered or real failure)
 2. NGINX detects failure (timeout or 5xx)
 3. NGINX retries request to Green (backup)
-4. Green responds with headers: `X-App-Pool: green`
+4. Green responds with headers: 
+   - `X-App-Pool: green`
+   - `X-Release-Id: green-release-1.0.0`
 5. Client receives 200 OK (never sees Blue's failure)
 
 ### NGINX Configuration
@@ -156,13 +180,13 @@ docker-compose exec nginx cat /etc/nginx/conf.d/default.conf
 docker-compose logs nginx
 
 # Verify Blue is actually failing
-curl http://localhost:8081/version
+curl -i http://13.217.227.104:8081/version | grep "X-App-Pool:"
 ```
 
 ### Headers Not Forwarding
 ```bash
 # Test with verbose output
-curl -v http://localhost:8080/version
+curl -v http://13.217.227.104:8080/version
 
 # Should see X-App-Pool and X-Release-Id in response headers
 ```
@@ -176,20 +200,19 @@ docker-compose down
 docker-compose down -v
 
 # Remove images (optional)
-docker rmi ghcr.io/hngprojects/hng_stage_two_task:main
+docker rmi -f yimikaade/wonderful:devops-stage-two
 ```
 
 ## Project Structure
 ```
 hng-stage2-blue-green/
-├── docker-compose.yml          # Service orchestration
-├── .env                        # Environment configuration
-├── .env.example               # Example environment file
-├── README.md                  # This file
-├── DECISION.md               # Implementation decisions
-└── nginx/
+├── docker-compose.yml        # Service orchestration
+├── .env                      # Environment configuration
+├── .env.example              # Example environment file
+├── README.md                 # This files the step by step implementation and testing
+└── nginx/                    # The nginx folder containing the files that will generate the conf template
     ├── nginx.conf.template   # NGINX configuration template
-    └── entrypoint.sh        # Config generation script
+    └── entrypoint.sh         # Config generation script
 ```
 
 ## Technical Decisions
@@ -209,4 +232,4 @@ Educational project for HNG Internship Stage 2.
 
 ---
 
-**Built with ❤️ for HNG13 DevOps Track**
+**Built for HNG13 DevOps Track by @DelightU: Ubah Delight Okechukwu**
