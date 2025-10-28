@@ -14,7 +14,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3000}/healthz"]
+      test: ["CMD-SHELL", "node -e 'const http=require(\"http\");http.get(\"http://localhost:3000/healthz\", res => { process.exit(res.statusCode===200?0:1) }).on(\"error\", () => process.exit(1))'"]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -34,7 +34,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3000}/healthz"]
+      test: ["CMD-SHELL", "node -e 'const http=require(\"http\");http.get(\"http://localhost:3000/healthz\", res => { process.exit(res.statusCode===200?0:1) }).on(\"error\", () => process.exit(1))'"]
       interval: 5s
       timeout: 3s
       retries: 3
