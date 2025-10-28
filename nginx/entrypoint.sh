@@ -29,16 +29,23 @@ export BACKUP_POOL
 export APP_PORT
 export BACKUP_SERVER_CONFIG
 
+# Remove any existing configs to prevent duplicates
+rm -f /etc/nginx/conf.d/*.conf
+
 # Generate nginx config
 echo "[INFO] Generating NGINX configuration..."
 envsubst '${ACTIVE_POOL} ${BACKUP_POOL} ${APP_PORT} ${BACKUP_SERVER_CONFIG}' \
-    < /etc/nginx/templates/nginx.conf.template \
+    < /etc/nginx/templates/default.conf.template \
     > /etc/nginx/conf.d/default.conf
 
 echo "[SUCCESS] Configuration generated!"
 echo "=========================================="
 cat /etc/nginx/conf.d/default.conf
 echo "=========================================="
+
+# List all config files to verify no duplicates
+echo "[INFO] Config files in /etc/nginx/conf.d/:"
+ls -la /etc/nginx/conf.d/
 
 # Test configuration
 nginx -t

@@ -48,7 +48,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./nginx/entrypoint.sh:/docker-entrypoint.d/40-generate-config.sh:ro
     environment:
       - ACTIVE_POOL=${ACTIVE_POOL}
